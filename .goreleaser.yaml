@@ -1,0 +1,102 @@
+project_name: otacon
+
+before:
+  hooks:
+    - go mod tidy
+    - go generate ./...
+
+builds:
+  - main: ./cmd/otacon
+    binary: otacon
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -s -w
+      - -X main.version={{.Version}}
+      - -X main.commit={{.Commit}}
+      - -X main.date={{.Date}}
+
+archives:
+  - format: tar.gz
+    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    format_overrides:
+      - goos: windows
+        format: zip
+
+dockers:
+  - image_templates:
+      - "ghcr.io/merthan/otacon:{{ .Tag }}"
+      - "ghcr.io/merthan/otacon:v{{ .Major }}"
+      - "ghcr.io/merthan/otacon:v{{ .Major }}.{{ .Minor }}"
+      - "ghcr.io/merthan/otacon:latest"
+    dockerfile: Dockerfile
+    build_flag_templates:
+      - "--build-arg=VERSION={{.Version}}"
+      - "--build-arg=COMMIT={{.Commit}}"
+      - "--build-arg=DATE={{.Date}}"
+
+brews:
+  - repository:
+      owner: merthan
+      name: homebrew-tap
+    homepage: "https://github.com/merthan/otacon"
+    description: "Intelligent Kubernetes Diagnostics & Audit Platform"
+    license: "Apache-2.0"
+    install: |
+      bin.install "otacon"
+
+checksum:
+  name_template: 'checksums.txt'
+
+changelog:
+  sort: asc
+  use: github
+  filters:
+    exclude:
+      - '^docs:'
+      - '^test:'
+      - '^ci:'
+      - '^chore:'
+  groups:
+    - title: '🚀 Features'
+      regexp: '^feat:'
+    - title: '🐛 Bug Fixes'
+      regexp: '^fix:'
+    - title: '📖 Documentation'
+      regexp: '^docs:'
+    - title: '🔧 Maintenance'
+      regexp: '^chore:|^ci:|^refactor:'
+
+release:
+  github:
+    owner: merthan
+    name: otacon
+  prerelease: auto
+  header: |
+    ## Otacon {{ .Tag }}
+
+    Intelligent Kubernetes Diagnostics & Audit Platform
+
+    ### Installation
+
+    ```bash
+    # Homebrew
+    brew install merthan/tap/otacon
+
+    # Binary
+    curl -sSL https://github.com/merthan/otacon/releases/download/{{ .Tag }}/otacon_{{ .Version }}_$(uname -s)_$(uname -m).tar.gz | tar xz
+    sudo mv otacon /usr/local/bin/
+
+    # Docker
+    docker pull ghcr.io/merthan/otacon:{{ .Tag }}
+
+    # Helm
+    helm install otacon oci://ghcr.io/merthan/otacon/chart --version {{ .Version }}
+    ```

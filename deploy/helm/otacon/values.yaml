@@ -1,0 +1,126 @@
+## Otacon Helm Chart Values
+## https://github.com/merthan/otacon
+
+replicaCount: 1
+
+image:
+  repository: ghcr.io/merthan/otacon
+  pullPolicy: IfNotPresent
+  tag: ""  # Defaults to appVersion
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+## Guardian mode configuration
+guardian:
+  enabled: true
+  port: 8080
+  metricsPort: 9090
+
+## Web UI
+ui:
+  enabled: true
+  # ingress configuration below
+
+## Notification channels
+notifications:
+  slack:
+    enabled: false
+    webhook: ""
+    channel: "#k8s-alerts"
+  teams:
+    enabled: false
+    webhook: ""
+  email:
+    enabled: false
+    host: ""
+    port: 587
+    username: ""
+    password: ""
+    from: ""
+    to: []
+
+## Audit configuration
+audit:
+  ## Run periodic audits
+  schedule: "0 */6 * * *"  # Every 6 hours
+  ## Categories to scan
+  categories: []  # Empty = all
+
+## Storage
+storage:
+  ## SQLite storage path
+  path: /data/otacon.db
+  ## Retention period for events and reports
+  retentionDays: 7
+  ## Persistent volume
+  persistence:
+    enabled: true
+    size: 1Gi
+    storageClass: ""
+
+## Service account
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""
+
+## RBAC
+rbac:
+  create: true
+
+## Pod security
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 65534
+  fsGroup: 65534
+
+securityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  runAsNonRoot: true
+  runAsUser: 65534
+  capabilities:
+    drop:
+      - ALL
+
+## Resources
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+## Service
+service:
+  type: ClusterIP
+  port: 8080
+
+## Metrics / Prometheus
+metrics:
+  enabled: true
+  port: 9090
+  serviceMonitor:
+    enabled: false
+    interval: 30s
+    labels: {}
+
+## Ingress
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+  hosts:
+    - host: otacon.local
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+
+## Node selector
+nodeSelector: {}
+tolerations: []
+affinity: {}

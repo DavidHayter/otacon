@@ -1,0 +1,48 @@
+# Binaries
+/otacon
+bin/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Test
+*.test
+coverage.out
+coverage.html
+
+# Go
+vendor/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Build
+dist/
+
+# UI
+ui/node_modules/
+ui/dist/
+
+# SQLite runtime files
+*.db
+*.db-shm
+*.db-wal
+
+# Local config
+*.local
+.env
+.env.*
+
+# Generated reports
+report.html
+report.json

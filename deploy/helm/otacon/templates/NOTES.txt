@@ -1,0 +1,38 @@
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  🛡️  OTACON — Kubernetes Intelligence Platform
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Otacon has been deployed in guardian mode.
+
+1. Access the Web UI:
+{{- if .Values.ingress.enabled }}
+   URL: http{{ if .Values.ingress.tls }}s{{ end }}://{{ (index .Values.ingress.hosts 0).host }}
+{{- else }}
+   kubectl -n {{ .Release.Namespace }} port-forward svc/{{ include "otacon.fullname" . }} 8080:{{ .Values.service.port }}
+   Then open: http://localhost:8080
+{{- end }}
+
+2. Check status:
+   kubectl -n {{ .Release.Namespace }} get pods -l app.kubernetes.io/name={{ include "otacon.name" . }}
+
+3. View logs:
+   kubectl -n {{ .Release.Namespace }} logs -f deploy/{{ include "otacon.fullname" . }}
+
+4. API endpoints:
+   /healthz          Health check
+   /readyz           Readiness check
+   /metrics          Prometheus metrics
+   /api/v1/events    Event timeline
+   /api/v1/incidents Correlated incidents
+   /api/v1/stats     System statistics
+
+{{- if .Values.notifications.slack.enabled }}
+5. Slack notifications are enabled → {{ .Values.notifications.slack.channel | default "#k8s-alerts" }}
+{{- end }}
+
+For CLI usage:
+   otacon scan                 Full cluster scan
+   otacon audit --explain      Audit with remediation
+   otacon diagnose all         Full diagnostics
+
+Documentation: https://github.com/merthan/otacon

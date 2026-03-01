@@ -1,0 +1,100 @@
+# Otacon Guardian Configuration
+# Place at ~/.otacon/config.yaml or pass via --config flag
+
+# Cluster connection
+cluster:
+  kubeconfig: ~/.kube/config
+  context: production-cluster
+
+# Guardian mode settings
+guardian:
+  port: 8080
+  metricsPort: 9090
+  ui: true
+
+# Event filtering
+events:
+  excludeNamespaces:
+    - kube-system
+    - kube-public
+    - kube-node-lease
+  # Only watch specific namespaces (empty = all)
+  namespaces: []
+
+# Intelligence engine
+intelligence:
+  correlation:
+    enabled: true
+    timeWindow: 10m
+  deduplication:
+    enabled: true
+    windowDuration: 15m
+    groupBy: ["namespace", "reason"]
+  cooldown:
+    defaultDuration: 60m
+    perSeverity:
+      CRITICAL: 15m
+      WARNING: 60m
+      INFO: 120m
+    maxSuppressed: 100
+
+# Notification channels
+notifications:
+  slack:
+    enabled: false
+    webhookUrl: ""
+    channel: "#k8s-alerts"
+    username: "Otacon"
+  teams:
+    enabled: false
+    webhookUrl: ""
+  email:
+    enabled: false
+    host: smtp.example.com
+    port: 587
+    username: ""
+    password: ""
+    from: otacon@example.com
+    to:
+      - ops@example.com
+  webhook:
+    enabled: false
+    url: ""
+    headers:
+      Authorization: "Bearer your-token"
+
+# Enrichment plugins
+enrichment:
+  logs:
+    enabled: true
+    tailLines: 20
+  grafana:
+    enabled: false
+    baseUrl: "https://grafana.example.com"
+    dashboardUID: "pod-metrics"
+  runbook:
+    enabled: false
+    baseUrl: "https://wiki.example.com"
+
+# Audit scheduling
+audit:
+  schedule: "0 */6 * * *"  # Every 6 hours
+  categories: []            # Empty = all
+
+# Digest scheduling
+digest:
+  daily:
+    enabled: true
+    schedule: "0 9 * * *"   # 9 AM daily
+    channels: ["slack"]
+  weekly:
+    enabled: false
+    schedule: "0 10 * * 1"  # Monday 10 AM
+    channels: ["email"]
+
+# Storage
+storage:
+  path: /data/otacon.db
+  eventRetention: 168h      # 7 days
+  auditRetention: 168h      # 7 days
+  digestRetention: 720h     # 30 days

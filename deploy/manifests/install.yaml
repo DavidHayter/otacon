@@ -1,0 +1,136 @@
+# Otacon — Quick Install (non-Helm)
+# kubectl apply -f deploy/manifests/install.yaml
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: otacon-system
+  labels:
+    app.kubernetes.io/name: otacon
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: otacon
+  namespace: otacon-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: otacon
+rules:
+  - apiGroups: [""]
+    resources: [pods, pods/log, services, endpoints, events, namespaces, nodes, configmaps, secrets, resourcequotas, limitranges, persistentvolumeclaims, serviceaccounts]
+    verbs: [get, list, watch]
+  - apiGroups: ["apps"]
+    resources: [deployments, daemonsets, statefulsets, replicasets]
+    verbs: [get, list, watch]
+  - apiGroups: ["networking.k8s.io"]
+    resources: [networkpolicies, ingresses]
+    verbs: [get, list, watch]
+  - apiGroups: ["policy"]
+    resources: [poddisruptionbudgets]
+    verbs: [get, list, watch]
+  - apiGroups: ["autoscaling"]
+    resources: [horizontalpodautoscalers]
+    verbs: [get, list, watch]
+  - apiGroups: ["rbac.authorization.k8s.io"]
+    resources: [clusterroles, clusterrolebindings, roles, rolebindings]
+    verbs: [get, list, watch]
+  - apiGroups: ["otacon.io"]
+    resources: [notificationrules, auditpolicies, digestschedules]
+    verbs: [get, list, watch, create, update, patch]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: otacon
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: otacon
+subjects:
+  - kind: ServiceAccount
+    name: otacon
+    namespace: otacon-system
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: otacon-data
+  namespace: otacon-system
+spec:
+  accessModes: [ReadWriteOnce]
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: otacon
+  namespace: otacon-system
+  labels:
+    app.kubernetes.io/name: otacon
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: otacon
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: otacon
+    spec:
+      serviceAccountName: otacon
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65534
+        fsGroup: 65534
+      containers:
+        - name: otacon
+          image: ghcr.io/merthan/otacon:latest
+          args: [guardian, start, --port=8080, --metrics-port=9090, --ui=true]
+          ports:
+            - name: http
+              containerPort: 8080
+            - name: metrics
+              containerPort: 9090
+          livenessProbe:
+            httpGet: { path: /healthz, port: http }
+            initialDelaySeconds: 10
+          readinessProbe:
+            httpGet: { path: /readyz, port: http }
+            initialDelaySeconds: 5
+          resources:
+            requests: { cpu: 100m, memory: 128Mi }
+            limits: { cpu: 500m, memory: 512Mi }
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: { drop: [ALL] }
+          volumeMounts:
+            - name: data
+              mountPath: /data
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: otacon-data
+        - name: tmp
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: otacon
+  namespace: otacon-system
+spec:
+  type: ClusterIP
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http
+  selector:
+    app.kubernetes.io/name: otacon

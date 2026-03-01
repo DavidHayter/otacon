@@ -1,0 +1,86 @@
+{{- if .Values.rbac.create }}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ include "otacon.fullname" . }}
+  labels:
+    {{- include "otacon.labels" . | nindent 4 }}
+rules:
+  # Core resources - read only
+  - apiGroups: [""]
+    resources:
+      - pods
+      - pods/log
+      - services
+      - endpoints
+      - events
+      - namespaces
+      - nodes
+      - configmaps
+      - secrets
+      - resourcequotas
+      - limitranges
+      - persistentvolumeclaims
+      - serviceaccounts
+    verbs: ["get", "list", "watch"]
+
+  # Apps resources - read only
+  - apiGroups: ["apps"]
+    resources:
+      - deployments
+      - daemonsets
+      - statefulsets
+      - replicasets
+    verbs: ["get", "list", "watch"]
+
+  # Networking - read only
+  - apiGroups: ["networking.k8s.io"]
+    resources:
+      - networkpolicies
+      - ingresses
+    verbs: ["get", "list", "watch"]
+
+  # Policy - read only
+  - apiGroups: ["policy"]
+    resources:
+      - poddisruptionbudgets
+    verbs: ["get", "list", "watch"]
+
+  # Autoscaling - read only
+  - apiGroups: ["autoscaling"]
+    resources:
+      - horizontalpodautoscalers
+    verbs: ["get", "list", "watch"]
+
+  # RBAC - read only (for auditing)
+  - apiGroups: ["rbac.authorization.k8s.io"]
+    resources:
+      - clusterroles
+      - clusterrolebindings
+      - roles
+      - rolebindings
+    verbs: ["get", "list", "watch"]
+
+  # Otacon CRDs
+  - apiGroups: ["otacon.io"]
+    resources:
+      - notificationrules
+      - auditpolicies
+      - digestschedules
+    verbs: ["get", "list", "watch", "create", "update", "patch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ include "otacon.fullname" . }}
+  labels:
+    {{- include "otacon.labels" . | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ include "otacon.fullname" . }}
+subjects:
+  - kind: ServiceAccount
+    name: {{ include "otacon.serviceAccountName" . }}
+    namespace: {{ .Release.Namespace }}
+{{- end }}

@@ -1,0 +1,19 @@
+apiVersion: v2
+name: otacon
+description: Intelligent Kubernetes Diagnostics & Audit Platform
+type: application
+version: 0.1.0
+appVersion: "0.1.0"
+home: https://github.com/merthan/otacon
+sources:
+  - https://github.com/merthan/otacon
+maintainers:
+  - name: merthan
+    url: https://github.com/merthan
+keywords:
+  - kubernetes
+  - monitoring
+  - diagnostics
+  - audit
+  - devops
+  - observability

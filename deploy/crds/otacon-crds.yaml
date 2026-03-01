@@ -1,0 +1,184 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: notificationrules.otacon.io
+  labels:
+    app.kubernetes.io/name: otacon
+spec:
+  group: otacon.io
+  versions:
+    - name: v1alpha1
+      served: true
+      storage: true
+      schema:
+        openAPIV3Schema:
+          type: object
+          properties:
+            spec:
+              type: object
+              properties:
+                match:
+                  type: object
+                  properties:
+                    namespaces:
+                      type: array
+                      items:
+                        type: string
+                    severities:
+                      type: array
+                      items:
+                        type: string
+                        enum: ["Critical", "Warning", "Info"]
+                    reasons:
+                      type: array
+                      items:
+                        type: string
+                routing:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      channel:
+                        type: string
+                        enum: ["slack", "teams", "email", "webhook"]
+                      target:
+                        type: string
+                      enrichment:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            type:
+                              type: string
+                              enum: ["logs", "grafana", "runbook"]
+                            tailLines:
+                              type: integer
+                            dashboardUID:
+                              type: string
+                deduplication:
+                  type: object
+                  properties:
+                    windowMinutes:
+                      type: integer
+                      default: 15
+                cooldown:
+                  type: object
+                  properties:
+                    durationMinutes:
+                      type: integer
+                      default: 60
+      additionalPrinterColumns:
+        - name: Channel
+          type: string
+          jsonPath: .spec.routing[0].channel
+        - name: Severities
+          type: string
+          jsonPath: .spec.match.severities
+        - name: Age
+          type: date
+          jsonPath: .metadata.creationTimestamp
+  scope: Namespaced
+  names:
+    plural: notificationrules
+    singular: notificationrule
+    kind: NotificationRule
+    shortNames:
+      - nr
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: auditpolicies.otacon.io
+  labels:
+    app.kubernetes.io/name: otacon
+spec:
+  group: otacon.io
+  versions:
+    - name: v1alpha1
+      served: true
+      storage: true
+      schema:
+        openAPIV3Schema:
+          type: object
+          properties:
+            spec:
+              type: object
+              properties:
+                schedule:
+                  type: string
+                  description: "Cron schedule for periodic audits"
+                categories:
+                  type: array
+                  items:
+                    type: string
+                    enum: ["security", "resources", "reliability", "best-practices", "network"]
+                namespaces:
+                  type: array
+                  items:
+                    type: string
+                excludeNamespaces:
+                  type: array
+                  items:
+                    type: string
+                thresholds:
+                  type: object
+                  properties:
+                    minScore:
+                      type: number
+                      description: "Alert if overall score drops below this"
+                    maxCritical:
+                      type: integer
+                      description: "Alert if critical findings exceed this"
+  scope: Cluster
+  names:
+    plural: auditpolicies
+    singular: auditpolicy
+    kind: AuditPolicy
+    shortNames:
+      - ap
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: digestschedules.otacon.io
+  labels:
+    app.kubernetes.io/name: otacon
+spec:
+  group: otacon.io
+  versions:
+    - name: v1alpha1
+      served: true
+      storage: true
+      schema:
+        openAPIV3Schema:
+          type: object
+          properties:
+            spec:
+              type: object
+              properties:
+                type:
+                  type: string
+                  enum: ["daily", "weekly"]
+                schedule:
+                  type: string
+                  description: "Cron schedule"
+                channels:
+                  type: array
+                  items:
+                    type: string
+                includeScorecard:
+                  type: boolean
+                  default: true
+                includeTopEvents:
+                  type: integer
+                  default: 10
+                includeTrending:
+                  type: boolean
+                  default: true
+  scope: Cluster
+  names:
+    plural: digestschedules
+    singular: digestschedule
+    kind: DigestSchedule
+    shortNames:
+      - ds

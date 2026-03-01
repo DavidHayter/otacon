@@ -1,0 +1,85 @@
+# Example: Route critical production events to Slack
+apiVersion: otacon.io/v1alpha1
+kind: NotificationRule
+metadata:
+  name: production-critical-slack
+  namespace: production
+spec:
+  match:
+    namespaces: ["production"]
+    severities: ["Critical"]
+  routing:
+    - channel: slack
+      target: "#prod-incidents"
+      enrichment:
+        - type: logs
+          tailLines: 20
+        - type: grafana
+          dashboardUID: "pod-metrics"
+  deduplication:
+    windowMinutes: 15
+  cooldown:
+    durationMinutes: 60
+---
+# Example: Route all warnings to Teams
+apiVersion: otacon.io/v1alpha1
+kind: NotificationRule
+metadata:
+  name: warning-teams
+  namespace: default
+spec:
+  match:
+    severities: ["Warning", "Critical"]
+  routing:
+    - channel: teams
+      target: "https://outlook.office.com/webhook/..."
+  cooldown:
+    durationMinutes: 30
+---
+# Example: Audit policy — run every 6 hours, alert if score drops below 70
+apiVersion: otacon.io/v1alpha1
+kind: AuditPolicy
+metadata:
+  name: standard-audit
+spec:
+  schedule: "0 */6 * * *"
+  categories:
+    - security
+    - resources
+    - reliability
+    - best-practices
+    - network
+  excludeNamespaces:
+    - kube-system
+    - kube-public
+  thresholds:
+    minScore: 70
+    maxCritical: 5
+---
+# Example: Daily digest to Slack
+apiVersion: otacon.io/v1alpha1
+kind: DigestSchedule
+metadata:
+  name: daily-digest
+spec:
+  type: daily
+  schedule: "0 9 * * *"
+  channels:
+    - slack
+  includeScorecard: true
+  includeTopEvents: 10
+  includeTrending: true
+---
+# Example: Weekly digest to email
+apiVersion: otacon.io/v1alpha1
+kind: DigestSchedule
+metadata:
+  name: weekly-report
+spec:
+  type: weekly
+  schedule: "0 10 * * 1"
+  channels:
+    - email
+  includeScorecard: true
+  includeTopEvents: 25
+  includeTrending: true
